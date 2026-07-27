@@ -13,15 +13,25 @@ from firebase_admin import credentials, firestore
 
 load_dotenv()
 
+import json
+
 try:
-    if os.path.exists("serviceAccountKey.json"):
+    if os.environ.get("FIREBASE_CREDENTIALS"):
+        # Load from Vercel environment variables securely
+        cred_dict = json.loads(os.environ.get("FIREBASE_CREDENTIALS"))
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        print("Firebase connected successfully via Environment Variable!")
+    elif os.path.exists("serviceAccountKey.json"):
+        # Load locally
         cred = credentials.Certificate("serviceAccountKey.json")
         firebase_admin.initialize_app(cred)
         db = firestore.client()
-        print("Firebase connected successfully!")
+        print("Firebase connected successfully via Local File!")
     else:
         db = None
-        print("Firebase serviceAccountKey.json not found. Running with in-memory history.")
+        print("Firebase credentials not found. Running with in-memory history.")
 except Exception as e:
     db = None
     print(f"Firebase init error: {e}")
