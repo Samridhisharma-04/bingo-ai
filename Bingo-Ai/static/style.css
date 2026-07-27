@@ -11,8 +11,19 @@
     --border-radius: 12px;
     --border-radius-pill: 24px;
 }
+}
+body.light-theme {
+    --bg-color: #f0f4f9;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #f0f4f9;
+    --text-primary: #1f1f1f;
+    --text-secondary: #444746;
+    --border-color: #e0e0e0;
+    --input-bg: #ffffff;
+    --accent-color: #0b57d0;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
+body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-primary); display: flex; height: 100dvh; overflow: hidden; }
 .app-container { display: flex; width: 100%; height: 100%; }
 .sidebar { width: 260px; background-color: var(--bg-surface); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.3s ease; }
 .sidebar.collapsed { transform: translateX(-100%); position: absolute; height: 100%; z-index: 10; }

@@ -22,6 +22,17 @@ messageInput.addEventListener('keydown', function(e) {
 
 toggleSidebarBtn.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
 
+themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('light-theme');
+    const icon = themeToggle.querySelector('i');
+    if (document.body.classList.contains('light-theme')) {
+        icon.setAttribute('data-lucide', 'moon');
+    } else {
+        icon.setAttribute('data-lucide', 'sun');
+    }
+    lucide.createIcons();
+});
+
 // Drag and drop UI (Logic to be implemented in backend later)
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
   dropZone.addEventListener(eventName, preventDefaults, false);
