@@ -11,7 +11,6 @@
     --border-radius: 12px;
     --border-radius-pill: 24px;
 }
-}
 body.light-theme {
     --bg-color: #f0f4f9;
     --bg-surface: #ffffff;
@@ -28,8 +27,14 @@ body { font-family: var(--font-family); background-color: var(--bg-color); color
 .sidebar { width: 260px; background-color: var(--bg-surface); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.3s ease; }
 .sidebar.collapsed { transform: translateX(-100%); position: absolute; height: 100%; z-index: 10; }
 .sidebar-header { padding: 20px; }
-.sidebar-content { padding: 0 20px; flex: 1; overflow-y: auto; }
-.empty-text { color: var(--text-secondary); font-size: 0.9rem; }
+.new-chat-btn { width: 100%; display: flex; align-items: center; gap: 8px; padding: 12px; background-color: var(--bg-surface-hover); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: var(--font-family); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+.new-chat-btn:hover { background-color: var(--border-color); }
+.new-chat-btn i { width: 18px; height: 18px; }
+.sidebar-content { padding: 0 12px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+.session-item { padding: 12px; border-radius: 8px; cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background-color 0.2s, color 0.2s; }
+.session-item:hover { background-color: var(--bg-surface-hover); color: var(--text-primary); }
+.session-item.active { background-color: var(--bg-surface-hover); color: var(--text-primary); font-weight: 500; }
+.empty-text { color: var(--text-secondary); font-size: 0.9rem; padding: 0 8px; }
 .main-content { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; }
 .top-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; height: 64px; }
 .brand h1 { font-size: 1.25rem; font-weight: 500; color: var(--text-primary); }

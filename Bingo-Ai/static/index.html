@@ -15,8 +15,12 @@
 <body>
     <div class="app-container">
         <aside class="sidebar collapsed" id="sidebar">
-            <div class="sidebar-header"><h2>History</h2></div>
-            <div class="sidebar-content"><p class="empty-text">No previous conversations.</p></div>
+            <div class="sidebar-header">
+                <button id="new-chat-btn" class="new-chat-btn"><i data-lucide="plus"></i> New Chat</button>
+            </div>
+            <div class="sidebar-content" id="sidebar-history-list">
+                <p class="empty-text">No previous conversations.</p>
+            </div>
         </aside>
 
         <main class="main-content">

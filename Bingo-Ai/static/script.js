@@ -42,14 +42,57 @@ themeToggle.addEventListener('click', () => {
     lucide.createIcons();
 });
 
-// Load chat history
-let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-window.addEventListener('DOMContentLoaded', () => {
-    if (chatHistory.length > 0) {
-        const welcome = document.querySelector('.welcome-message');
-        if (welcome) welcome.style.display = 'none';
-        chatHistory.forEach(msg => addMessageToChat(msg.text, msg.sender, false));
+// --- Session Manager Logic ---
+let chatSessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
+let currentSessionId = null;
+
+const sidebarHistoryList = document.getElementById('sidebar-history-list');
+const newChatBtn = document.getElementById('new-chat-btn');
+const welcomeMessage = document.querySelector('.welcome-message');
+
+function renderSidebar() {
+    sidebarHistoryList.innerHTML = '';
+    if (chatSessions.length === 0) {
+        sidebarHistoryList.innerHTML = '<p class="empty-text">No previous conversations.</p>';
+        return;
     }
+    // Render in reverse chronological order
+    [...chatSessions].reverse().forEach(session => {
+        const item = document.createElement('div');
+        item.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
+        item.textContent = session.title;
+        item.onclick = () => loadSession(session.id);
+        sidebarHistoryList.appendChild(item);
+    });
+}
+
+function loadSession(id) {
+    currentSessionId = id;
+    const session = chatSessions.find(s => s.id === id);
+    if (!session) return;
+    
+    // Clear chat container but keep welcome message hidden
+    const messages = chatContainer.querySelectorAll('.message-wrapper');
+    messages.forEach(m => m.remove());
+    if (welcomeMessage) welcomeMessage.style.display = 'none';
+    
+    session.messages.forEach(msg => addMessageToChat(msg.text, msg.sender, false));
+    renderSidebar();
+    if(window.innerWidth <= 768) sidebar.classList.add('collapsed');
+}
+
+newChatBtn.addEventListener('click', () => {
+    currentSessionId = null;
+    const messages = chatContainer.querySelectorAll('.message-wrapper');
+    messages.forEach(m => m.remove());
+    if (welcomeMessage) welcomeMessage.style.display = 'block';
+    renderSidebar();
+    if(window.innerWidth <= 768) sidebar.classList.add('collapsed');
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    // We do NOT auto-load the last chat. We start on a fresh screen like ChatGPT.
+    renderSidebar();
 });
 
 // Drag and drop UI (Logic to be implemented in backend later)
@@ -126,8 +169,18 @@ async function sendMessage() {
 
 function addMessageToChat(text, sender, save = true) {
     if (save) {
-        chatHistory.push({ text, sender });
-        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        if (!currentSessionId) {
+            // Create a new session
+            currentSessionId = Date.now();
+            const title = text.length > 30 ? text.substring(0, 30) + '...' : text;
+            chatSessions.push({ id: currentSessionId, title: title, messages: [] });
+        }
+        const session = chatSessions.find(s => s.id === currentSessionId);
+        if (session) {
+            session.messages.push({ text, sender });
+            localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+            renderSidebar();
+        }
     }
     
     const wrapper = document.createElement('div');
