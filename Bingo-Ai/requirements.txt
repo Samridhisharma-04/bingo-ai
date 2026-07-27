@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+google-generativeai
+python-dotenv
+duckduckgo-search
+beautifulsoup4
+firebase-admin
+python-multipart
