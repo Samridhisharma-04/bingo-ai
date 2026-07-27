@@ -40,17 +40,9 @@ api_key = os.getenv("GEMINI_API_KEY")
 model = None
 if api_key and api_key != "your_gemini_api_key_here":
     genai.configure(api_key=api_key)
-    try:
-        available = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        if available:
-            # Prefer flash models, fallback to whatever is available
-            flash = [m for m in available if 'flash' in m.lower()]
-            chosen = flash[0] if flash else available[0]
-            chosen = chosen.replace("models/", "")
-            print(f"Auto-selected model: {chosen}")
-            model = genai.GenerativeModel(chosen)
-    except Exception as e:
-        print(f"Error fetching models: {e}")
+    # Using the auto-updating alias to always get the latest available flash model
+    model = genai.GenerativeModel('gemini-flash')
+
 
 app = FastAPI()
 
