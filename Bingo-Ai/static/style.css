@@ -60,3 +60,5 @@ textarea::placeholder { color: var(--text-secondary); }
 .copy-code-btn i { width: 14px; height: 14px; }
 
 .attachment-label { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 4px 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; color: var(--text-primary); } .attachment-label i { width: 14px; height: 14px; } .attachment-label button { background: none; border: none; color: #ffb2b2; cursor: pointer; display: flex; align-items: center; }
+
+@media (max-width: 768px) { .sidebar { position: absolute; z-index: 100; height: 100%; box-shadow: 4px 0 15px rgba(0,0,0,0.5); } .welcome-message h2 { font-size: 2rem; } .message { max-width: 95%; font-size: 0.95rem; } .input-container { padding: 0 10px 10px 10px; } .top-nav { padding: 10px; } }
