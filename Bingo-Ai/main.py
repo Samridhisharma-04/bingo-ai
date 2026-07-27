@@ -37,11 +37,10 @@ except Exception as e:
     print(f"Firebase init error: {e}")
 
 api_key = os.getenv("GEMINI_API_KEY")
-model = None
 if api_key and api_key != "your_gemini_api_key_here":
     genai.configure(api_key=api_key)
-    # Using the auto-updating alias to always get the latest available flash model
-    model = genai.GenerativeModel('gemini-flash')
+    # We will instantiate the GenerativeModel dynamically per request to find one that works.
+
 
 
 app = FastAPI()
@@ -115,26 +114,59 @@ async def chat(request: Request):
                 print(f"Error saving command to Firestore: {e}")
         return JSONResponse(content={"reply": bot_reply})
         
-    if not model:
+    # We no longer rely on a global 'model' variable
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key or api_key == "your_gemini_api_key_here":
         return JSONResponse(content={"reply": "⚠️ Gemini API key is not configured. Please add it to your .env file."})
         
     try:
         # Prepare contents for Gemini
-        contents = [user_message]
+        contents = []
         
+        file_bytes = None
+        mime_type = None
         # If an image file was uploaded, process it
         if file and file.filename:
             file_bytes = await file.read()
-            contents.append({
-                "mime_type": file.content_type,
-                "data": file_bytes
-            })
+            mime_type = file.content_type
             chat_history.append({"role": "user", "content": f"{user_message} (Attached File: {file.filename})"})
         else:
             chat_history.append({"role": "user", "content": user_message})
 
-        # Call Gemini (Flash handles both text and multimodal)
-        response = model.generate_content(contents)
+        if file_bytes:
+            contents.append({"mime_type": mime_type, "data": file_bytes})
+        contents.append(user_message)
+        
+        # Robust Fallback Loop: Try all available models until one works
+        available_models = []
+        try:
+            available_models = [m.name.replace("models/", "") for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        except:
+            pass
+            
+        if not available_models:
+            available_models = ['gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-pro', 'gemini-flash', 'gemini-1.5-pro', 'gemini-2.0-flash']
+            
+        response = None
+        last_error = None
+        
+        for m_name in available_models:
+            # Skip old vision-only models as they don't support multi-turn text well
+            if 'vision' in m_name.lower(): continue 
+            
+            try:
+                temp_model = genai.GenerativeModel(m_name)
+                response = temp_model.generate_content(contents)
+                print(f"Successfully used model: {m_name}")
+                break # It worked! Exit the loop.
+            except Exception as e:
+                last_error = e
+                print(f"Model {m_name} failed: {e}")
+                continue # Try the next model
+                
+        if response is None:
+            raise Exception(f"All available models rejected the request. Last error: {last_error}")
+            
         bot_reply = response.text
         
         chat_history.append({"role": "model", "content": bot_reply})
