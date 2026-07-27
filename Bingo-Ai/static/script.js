@@ -60,10 +60,39 @@ function renderSidebar() {
     [...chatSessions].reverse().forEach(session => {
         const item = document.createElement('div');
         item.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
-        item.textContent = session.title;
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = session.title;
+        titleSpan.className = 'session-title';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-chat-btn';
+        deleteBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+        deleteBtn.setAttribute('aria-label', 'Delete chat');
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteSession(session.id);
+        };
+        
+        item.appendChild(titleSpan);
+        item.appendChild(deleteBtn);
         item.onclick = () => loadSession(session.id);
         sidebarHistoryList.appendChild(item);
     });
+    lucide.createIcons();
+}
+
+function deleteSession(id) {
+    chatSessions = chatSessions.filter(s => s.id !== id);
+    localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+    
+    if (currentSessionId === id) {
+        currentSessionId = null;
+        const messages = chatContainer.querySelectorAll('.message-wrapper');
+        messages.forEach(m => m.remove());
+        if (welcomeMessage) welcomeMessage.style.display = 'block';
+    }
+    renderSidebar();
 }
 
 function loadSession(id) {
