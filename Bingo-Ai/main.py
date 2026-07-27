@@ -147,7 +147,7 @@ async def chat(request: Request):
                 
     except Exception as e:
         print(f"Error calling Gemini: {e}")
-        bot_reply = "Sorry, I encountered an error communicating with the AI. Check console for details."
+        bot_reply = f"Sorry, I encountered an error communicating with the AI. Error Details: {str(e)}"
         
     return JSONResponse(content={"reply": bot_reply})
 
