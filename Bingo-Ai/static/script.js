@@ -22,15 +22,34 @@ messageInput.addEventListener('keydown', function(e) {
 
 toggleSidebarBtn.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
 
+// Load saved theme
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+    document.body.classList.add('light-theme');
+    themeToggle.querySelector('i').setAttribute('data-lucide', 'moon');
+}
+
 themeToggle.addEventListener('click', () => {
     document.body.classList.toggle('light-theme');
     const icon = themeToggle.querySelector('i');
     if (document.body.classList.contains('light-theme')) {
         icon.setAttribute('data-lucide', 'moon');
+        localStorage.setItem('theme', 'light');
     } else {
         icon.setAttribute('data-lucide', 'sun');
+        localStorage.setItem('theme', 'dark');
     }
     lucide.createIcons();
+});
+
+// Load chat history
+let chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+window.addEventListener('DOMContentLoaded', () => {
+    if (chatHistory.length > 0) {
+        const welcome = document.querySelector('.welcome-message');
+        if (welcome) welcome.style.display = 'none';
+        chatHistory.forEach(msg => addMessageToChat(msg.text, msg.sender, false));
+    }
 });
 
 // Drag and drop UI (Logic to be implemented in backend later)
@@ -105,7 +124,12 @@ async function sendMessage() {
     }
 }
 
-function addMessageToChat(text, sender) {
+function addMessageToChat(text, sender, save = true) {
+    if (save) {
+        chatHistory.push({ text, sender });
+        localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+    }
+    
     const wrapper = document.createElement('div');
     wrapper.className = 'message-wrapper';
     const messageDiv = document.createElement('div');
@@ -147,7 +171,7 @@ function showTypingIndicator() {
     wrapper.id = id;
     const indicator = document.createElement('div');
     indicator.className = 'typing-indicator ai';
-    indicator.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    indicator.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="thinking-text">Thinking...</span>';
     wrapper.appendChild(indicator);
     chatContainer.appendChild(wrapper);
     chatContainer.scrollTop = chatContainer.scrollHeight;
