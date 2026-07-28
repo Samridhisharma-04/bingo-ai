@@ -28,10 +28,15 @@
                 <button id="new-chat-btn" class="new-chat-btn"><i data-lucide="plus"></i> New Chat</button>
             </div>
             
-            <div class="sidebar-recent">
+            <div class="recent-chats">
                 <div class="recent-header">
-                    <span class="recent-title"><i data-lucide="clock"></i> Recent Chats</span>
-                    <button id="clear-all-btn" class="icon-btn clear-all-btn" aria-label="Clear history"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <span style="display:flex; align-items:center; gap:8px;"><i data-lucide="clock" style="width:16px;height:16px;"></i> Recent Chats</span>
+                        <div style="display:flex; gap: 8px;">
+                            <button id="view-history-btn" title="View All History" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:12px;">View All</button>
+                            <button id="clear-all-btn" title="Clear All Chats" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);"><i data-lucide="trash-2" style="width:16px;height:16px;"></i></button>
+                        </div>
+                    </div>
                 </div>
                 <div class="sidebar-content" id="sidebar-history-list">
                     <p class="empty-text">No previous conversations.</p>
@@ -86,12 +91,54 @@
             </div>
 
             <div class="input-container">
+                <div id="attachment-preview" class="attachment-preview" style="display: none;">
+                    <i data-lucide="file" style="width:14px;height:14px;"></i>
+                    <span id="attachment-name">filename.png</span>
+                    <button type="button" id="remove-attachment-btn"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                </div>
                 <div class="input-wrapper" id="drop-zone">
                     <button class="icon-btn attachment-btn" aria-label="Attach file" id="attach-btn"><i data-lucide="paperclip"></i></button>
                     <textarea id="message-input" placeholder="Type your message here..." rows="1" autofocus></textarea>
                     <span class="char-count" id="char-count">0 / 4000</span>
                     <button id="send-btn" class="send-btn" disabled><i data-lucide="send"></i></button>
                 </div>
+            </div>
+        </main>
+        
+        <!-- Session History View -->
+        <main class="session-history-view" id="session-history-view" style="display: none;">
+            <header class="history-header">
+                <div class="history-title-area">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <button id="close-history-btn" class="action-btn"><i data-lucide="arrow-left"></i></button>
+                        <h2><i data-lucide="clock"></i> Session History</h2>
+                    </div>
+                    <p>View and manage all your previous conversations.</p>
+                </div>
+                <div class="search-bar">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="history-search-input" placeholder="Search chats...">
+                </div>
+            </header>
+            <div class="history-table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Messages</th>
+                            <th>Last Updated</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        <!-- Rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                <button id="page-prev"><i data-lucide="chevron-left"></i></button>
+                <div id="page-numbers" class="page-numbers"></div>
+                <button id="page-next"><i data-lucide="chevron-right"></i></button>
             </div>
         </main>
     </div>

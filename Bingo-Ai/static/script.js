@@ -102,6 +102,94 @@ function updateActiveChatHeader(title) {
     }
 }
 
+// Session History View Logic
+const viewHistoryBtn = document.getElementById('view-history-btn');
+const closeHistoryBtn = document.getElementById('close-history-btn');
+const searchHistoryInput = document.getElementById('history-search-input');
+const historyTableBody = document.getElementById('history-table-body');
+const pageNumbersContainer = document.getElementById('page-numbers');
+const pagePrevBtn = document.getElementById('page-prev');
+const pageNextBtn = document.getElementById('page-next');
+let historyCurrentPage = 1;
+const historyPerPage = 5;
+
+function renderSessionHistoryTable(filterText = '') {
+    historyTableBody.innerHTML = '';
+    const filteredSessions = chatSessions.filter(s => s.title.toLowerCase().includes(filterText.toLowerCase()));
+    filteredSessions.sort((a,b) => b.id - a.id);
+    
+    const totalPages = Math.ceil(filteredSessions.length / historyPerPage) || 1;
+    if (historyCurrentPage > totalPages) historyCurrentPage = totalPages;
+    
+    const startIdx = (historyCurrentPage - 1) * historyPerPage;
+    const paginatedSessions = filteredSessions.slice(startIdx, startIdx + historyPerPage);
+    
+    if (paginatedSessions.length === 0) {
+        historyTableBody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">No conversations found.</td></tr>`;
+    } else {
+        paginatedSessions.forEach(session => {
+            const tr = document.createElement('tr');
+            tr.onclick = () => selectSession(session.id);
+            tr.innerHTML = `
+                <td class="title-col"><i data-lucide="message-square"></i> ${session.title}</td>
+                <td>${session.messages ? session.messages.length : 0}</td>
+                <td>${session.time}</td>
+                <td style="text-align:right;"><i data-lucide="more-vertical" style="width:18px;height:18px;color:var(--text-secondary);"></i></td>
+            `;
+            historyTableBody.appendChild(tr);
+        });
+        lucide.createIcons();
+    }
+    
+    renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+    pageNumbersContainer.innerHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+        const span = document.createElement('span');
+        span.textContent = i;
+        if (i === historyCurrentPage) span.className = 'active';
+        span.onclick = () => { historyCurrentPage = i; renderSessionHistoryTable(searchHistoryInput.value); };
+        pageNumbersContainer.appendChild(span);
+    }
+    pagePrevBtn.disabled = historyCurrentPage === 1;
+    pageNextBtn.disabled = historyCurrentPage === totalPages;
+}
+
+pagePrevBtn.addEventListener('click', () => {
+    if (historyCurrentPage > 1) { historyCurrentPage--; renderSessionHistoryTable(searchHistoryInput.value); }
+});
+pageNextBtn.addEventListener('click', () => {
+    historyCurrentPage++; renderSessionHistoryTable(searchHistoryInput.value);
+});
+
+searchHistoryInput.addEventListener('input', (e) => {
+    historyCurrentPage = 1;
+    renderSessionHistoryTable(e.target.value);
+});
+
+if (viewHistoryBtn) {
+    viewHistoryBtn.addEventListener('click', () => {
+        document.querySelector('.main-content').style.display = 'none';
+        document.getElementById('session-history-view').style.display = 'flex';
+        historyCurrentPage = 1;
+        searchHistoryInput.value = '';
+        renderSessionHistoryTable();
+        if(window.innerWidth <= 768) {
+            sidebar.classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+        }
+    });
+}
+
+if (closeHistoryBtn) {
+    closeHistoryBtn.addEventListener('click', () => {
+        document.getElementById('session-history-view').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'flex';
+    });
+}
+
 function renderSidebar() {
     sidebarHistoryList.innerHTML = '';
     if (chatSessions.length === 0) {
@@ -144,6 +232,25 @@ function renderSidebar() {
     lucide.createIcons();
 }
 
+function selectSession(id) {
+    document.getElementById('session-history-view').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'flex';
+    currentSessionId = id;
+    const session = chatSessions.find(s => s.id === id);
+    if (!session) return;
+    
+    chatContainer.querySelectorAll('.message-wrapper').forEach(m => m.remove());
+    if (welcomeMessage) welcomeMessage.style.display = 'none';
+    
+    session.messages.forEach(msg => addMessageToChat(msg.text, msg.sender, false, msg.timestamp));
+    updateActiveChatHeader(session.title);
+    renderSidebar();
+    if(window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('open');
+    }
+}
+
 function deleteSession(id) {
     chatSessions = chatSessions.filter(s => s.id !== id);
     localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
@@ -177,10 +284,11 @@ function loadSession(id) {
     }
 }
 
-newChatBtn.addEventListener('click', () => {
+document.getElementById('new-chat-btn').addEventListener('click', () => {
+    document.getElementById('session-history-view').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'flex';
     currentSessionId = null;
-    const messages = chatContainer.querySelectorAll('.message-wrapper');
-    messages.forEach(m => m.remove());
+    chatContainer.querySelectorAll('.message-wrapper').forEach(m => m.remove());
     if (welcomeMessage) welcomeMessage.style.display = 'flex';
     updateActiveChatHeader(null);
     renderSidebar();
@@ -252,35 +360,42 @@ function handleDrop(e) {
   let files = dt.files;
   if(files.length > 0) {
       currentAttachedFile = files[0];
-      const attachLabel = document.createElement('div');
-      attachLabel.className = 'attachment-label';
-      attachLabel.innerHTML = `<span><i data-lucide="file"></i> ${files[0].name}</span><button onclick="clearAttachment()"><i data-lucide="x"></i></button>`;
-      document.querySelector('.input-wrapper').prepend(attachLabel);
-      lucide.createIcons();
-      messageInput.focus();
+      document.getElementById('attachment-preview').style.display = 'flex';
+      document.getElementById('attachment-name').textContent = currentAttachedFile.name;
+      sendBtn.removeAttribute('disabled');
   }
 }
 
 function clearAttachment() {
     currentAttachedFile = null;
-    const label = document.querySelector('.attachment-label');
-    if (label) label.remove();
+    fileInput.value = '';
+    document.getElementById('attachment-preview').style.display = 'none';
+    if (messageInput.value.trim().length === 0) {
+        sendBtn.setAttribute('disabled', 'true');
+    }
 }
 
+document.getElementById('remove-attachment-btn').addEventListener('click', clearAttachment);
+
+const fileInput = document.createElement('input');
+fileInput.type = 'file';
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        currentAttachedFile = e.target.files[0];
+        document.getElementById('attachment-preview').style.display = 'flex';
+        document.getElementById('attachment-name').textContent = currentAttachedFile.name;
+        sendBtn.removeAttribute('disabled');
+    }
+});
+
 attachBtn.addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = e => { 
-        if(e.target.files.length > 0) {
-            handleDrop({ dataTransfer: { files: e.target.files }, preventDefault: ()=>{} });
-        }
-    };
-    input.click();
+    fileInput.click();
 });
 
 async function sendMessage() {
     const text = messageInput.value.trim();
-    if (!text) return;
+    if (!text && !currentAttachedFile) return;
     
     const timestamp = getCurrentTimeString();
     addMessageToChat(text, 'user', true, timestamp);
@@ -383,8 +498,8 @@ function addMessageToChat(text, sender, save = true, timestamp = '') {
     // Add footers
     if (sender === 'user') {
         const footer = document.createElement('div');
-        footer.className = 'user-msg-footer';
-        footer.innerHTML = `${timestamp} <i data-lucide="check-check"></i>`;
+        footer.className = 'user-msg-time';
+        footer.innerHTML = `${timestamp} <i class="double-check" data-lucide="check-check"></i>`;
         messageContent.appendChild(footer);
     } else if (sender === 'ai') {
         const footer = document.createElement('div');
