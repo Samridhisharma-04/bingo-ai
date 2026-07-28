@@ -45,7 +45,15 @@ messageInput.addEventListener('keydown', function(e) {
     }
 });
 
-toggleSidebarBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); });
+toggleSidebarBtn.addEventListener('click', () => { 
+    sidebar.classList.toggle('open'); 
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+});
+
+document.getElementById('sidebar-overlay').addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+});
 
 // Theme Logic
 function setTheme(isLight) {
@@ -163,7 +171,10 @@ function loadSession(id) {
     session.messages.forEach(msg => addMessageToChat(msg.text, msg.sender, false, msg.timestamp));
     updateActiveChatHeader(session.title);
     renderSidebar();
-    if(window.innerWidth <= 768) sidebar.classList.remove('open');
+    if(window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('open');
+    }
 }
 
 newChatBtn.addEventListener('click', () => {
@@ -173,11 +184,24 @@ newChatBtn.addEventListener('click', () => {
     if (welcomeMessage) welcomeMessage.style.display = 'flex';
     updateActiveChatHeader(null);
     renderSidebar();
-    if(window.innerWidth <= 768) sidebar.classList.remove('open');
+    if(window.innerWidth <= 768) {
+        sidebar.classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('open');
+    }
 });
 
 clearCurrentChatBtn.addEventListener('click', () => {
-    if(currentSessionId) deleteSession(currentSessionId);
+    if(currentSessionId) {
+        const session = chatSessions.find(s => s.id === currentSessionId);
+        if (session) {
+            session.messages = [];
+            localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+            const messages = chatContainer.querySelectorAll('.message-wrapper');
+            messages.forEach(m => m.remove());
+            if (welcomeMessage) welcomeMessage.style.display = 'flex';
+            updateActiveChatHeader(null);
+        }
+    }
 });
 
 const editChatBtn = document.querySelector('.edit-chat-btn');
