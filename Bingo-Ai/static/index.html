@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bingo-Ai</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8c7fa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 8V4H8'/><rect width='16' height='12' x='4' y='8' rx='2'/><path d='M2 14h2'/><path d='M20 14h2'/><path d='M15 13v2'/><path d='M9 13v2'/></svg>">
+    <title>Bingo-AI</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b57d0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 8V4H8'/><rect width='16' height='12' x='4' y='8' rx='2'/><path d='M2 14h2'/><path d='M20 14h2'/><path d='M15 13v2'/><path d='M9 13v2'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -14,36 +14,83 @@
 </head>
 <body>
     <div class="app-container">
-        <aside class="sidebar collapsed" id="sidebar">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-logo"><i data-lucide="bot"></i></div>
+                    <div class="brand-text">
+                        <h1>Bingo-AI</h1>
+                        <span>Your AI Companion</span>
+                    </div>
+                </div>
                 <button id="new-chat-btn" class="new-chat-btn"><i data-lucide="plus"></i> New Chat</button>
             </div>
-            <div class="sidebar-content" id="sidebar-history-list">
-                <p class="empty-text">No previous conversations.</p>
+            
+            <div class="sidebar-recent">
+                <div class="recent-header">
+                    <span class="recent-title"><i data-lucide="clock"></i> Recent Chats</span>
+                    <button id="clear-all-btn" class="icon-btn clear-all-btn" aria-label="Clear history"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+                </div>
+                <div class="sidebar-content" id="sidebar-history-list">
+                    <p class="empty-text">No previous conversations.</p>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="settings-header">
+                    <span class="settings-title"><i data-lucide="settings"></i> Settings</span>
+                </div>
+                <div class="theme-switch-container">
+                    <span class="theme-label"><i data-lucide="sun" id="theme-icon-sidebar"></i> Light Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-toggle-switch">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
             </div>
         </aside>
 
+        <!-- Main Content -->
         <main class="main-content">
-            <header class="top-nav">
-                <button id="toggle-sidebar" class="icon-btn" aria-label="Toggle sidebar"><i data-lucide="menu"></i></button>
-                <div class="brand"><h1 id="app-title">Bingo-Ai</h1></div>
-                <div class="nav-actions"><button id="theme-toggle" class="icon-btn" aria-label="Toggle theme"><i data-lucide="moon"></i></button></div>
+            <header class="top-nav" id="top-nav">
+                <div class="left-nav">
+                   <button id="toggle-sidebar" class="icon-btn mobile-only" aria-label="Toggle sidebar"><i data-lucide="menu"></i></button>
+                   <div id="active-chat-info" class="active-chat-info hidden">
+                       <span id="active-chat-title">New Chat</span>
+                       <button class="icon-btn edit-chat-btn"><i data-lucide="edit-2"></i></button>
+                   </div>
+                </div>
+                
+                <div class="right-nav">
+                   <button id="clear-current-chat" class="clear-chat-btn hidden"><i data-lucide="trash-2"></i> Clear Chat</button>
+                   
+                   <div class="theme-pill" id="theme-pill">
+                       <button class="theme-pill-btn active" id="pill-light"><i data-lucide="sun"></i> Light</button>
+                       <button class="theme-pill-btn" id="pill-dark"><i data-lucide="moon"></i> Dark</button>
+                   </div>
+                   
+                   <div class="user-avatar">A</div>
+                </div>
             </header>
 
             <div class="chat-container" id="chat-container">
-                <div class="welcome-message">
-                    <h2>Hello. I am Bingo.</h2>
-                    <p>How can I help you today?</p>
+                <div class="welcome-message" id="welcome-message">
+                    <div class="welcome-logo"><i data-lucide="bot"></i></div>
+                    <h2 class="welcome-title">Bingo-AI</h2>
+                    <p class="subtitle">Your Intelligent AI Assistant</p>
+                    <h3 class="greeting">How can I help you today?</h3>
+                    <p class="sub-greeting">Ask anything, get instant intelligent answers.</p>
                 </div>
             </div>
 
             <div class="input-container">
                 <div class="input-wrapper" id="drop-zone">
                     <button class="icon-btn attachment-btn" aria-label="Attach file" id="attach-btn"><i data-lucide="paperclip"></i></button>
-                    <textarea id="message-input" placeholder="Ask Bingo anything or drag a file here..." rows="1" autofocus></textarea>
+                    <textarea id="message-input" placeholder="Type your message here..." rows="1" autofocus></textarea>
+                    <span class="char-count" id="char-count">0 / 4000</span>
                     <button id="send-btn" class="send-btn" disabled><i data-lucide="send"></i></button>
                 </div>
-                <div class="input-footer"><p>Bingo-Ai can make mistakes. Verify important info.</p></div>
             </div>
         </main>
     </div>

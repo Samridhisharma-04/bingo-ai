@@ -1,46 +1,79 @@
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
 const chatContainer = document.getElementById('chat-container');
-const themeToggle = document.getElementById('theme-toggle');
 const toggleSidebarBtn = document.getElementById('toggle-sidebar');
 const sidebar = document.getElementById('sidebar');
 const dropZone = document.getElementById('drop-zone');
 const attachBtn = document.getElementById('attach-btn');
+const charCount = document.getElementById('char-count');
 
+// Theme Elements
+const themeSwitch = document.getElementById('theme-toggle-switch');
+const pillLight = document.getElementById('pill-light');
+const pillDark = document.getElementById('pill-dark');
+const themeIconSidebar = document.getElementById('theme-icon-sidebar');
+
+// Active Chat Elements
+const activeChatInfo = document.getElementById('active-chat-info');
+const activeChatTitle = document.getElementById('active-chat-title');
+const clearCurrentChatBtn = document.getElementById('clear-current-chat');
+const clearAllBtn = document.getElementById('clear-all-btn');
+
+const MAX_CHARS = 4000;
+
+// Input handling
 messageInput.addEventListener('input', function() {
     this.style.height = 'auto';
     this.style.height = (this.scrollHeight) + 'px';
-    if (this.value.trim().length > 0) { sendBtn.removeAttribute('disabled'); } 
-    else { sendBtn.setAttribute('disabled', 'true'); }
+    
+    const len = this.value.length;
+    charCount.textContent = `${len} / ${MAX_CHARS}`;
+    
+    if (len > 0 && len <= MAX_CHARS) { 
+        sendBtn.removeAttribute('disabled'); 
+    } else { 
+        sendBtn.setAttribute('disabled', 'true'); 
+    }
 });
 
 sendBtn.addEventListener('click', sendMessage);
 
 messageInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    if (e.key === 'Enter' && !e.shiftKey) { 
+        e.preventDefault(); 
+        if(!sendBtn.disabled) sendMessage(); 
+    }
 });
 
-toggleSidebarBtn.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
+toggleSidebarBtn.addEventListener('click', () => { sidebar.classList.toggle('open'); });
 
-// Load saved theme
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'light') {
-    document.body.classList.add('light-theme');
-    themeToggle.querySelector('i').setAttribute('data-lucide', 'moon');
-}
-
-themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('light-theme');
-    const icon = themeToggle.querySelector('i');
-    if (document.body.classList.contains('light-theme')) {
-        icon.setAttribute('data-lucide', 'moon');
+// Theme Logic
+function setTheme(isLight) {
+    if (isLight) {
+        document.body.classList.add('light-theme');
+        themeSwitch.checked = false;
+        themeIconSidebar.setAttribute('data-lucide', 'sun');
+        pillLight.classList.add('active');
+        pillDark.classList.remove('active');
         localStorage.setItem('theme', 'light');
     } else {
-        icon.setAttribute('data-lucide', 'sun');
+        document.body.classList.remove('light-theme');
+        themeSwitch.checked = true;
+        themeIconSidebar.setAttribute('data-lucide', 'moon');
+        pillDark.classList.add('active');
+        pillLight.classList.remove('active');
         localStorage.setItem('theme', 'dark');
     }
     lucide.createIcons();
-});
+}
+
+const savedTheme = localStorage.getItem('theme');
+setTheme(savedTheme === 'light');
+
+themeSwitch.addEventListener('change', (e) => setTheme(!e.target.checked));
+pillLight.addEventListener('click', () => setTheme(true));
+pillDark.addEventListener('click', () => setTheme(false));
+
 
 // --- Session Manager Logic ---
 let chatSessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
@@ -48,7 +81,18 @@ let currentSessionId = null;
 
 const sidebarHistoryList = document.getElementById('sidebar-history-list');
 const newChatBtn = document.getElementById('new-chat-btn');
-const welcomeMessage = document.querySelector('.welcome-message');
+const welcomeMessage = document.getElementById('welcome-message');
+
+function updateActiveChatHeader(title) {
+    if (title) {
+        activeChatInfo.classList.remove('hidden');
+        clearCurrentChatBtn.classList.remove('hidden');
+        activeChatTitle.textContent = title;
+    } else {
+        activeChatInfo.classList.add('hidden');
+        clearCurrentChatBtn.classList.add('hidden');
+    }
+}
 
 function renderSidebar() {
     sidebarHistoryList.innerHTML = '';
@@ -61,9 +105,19 @@ function renderSidebar() {
         const item = document.createElement('div');
         item.className = 'session-item' + (session.id === currentSessionId ? ' active' : '');
         
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'session-info';
+        
         const titleSpan = document.createElement('span');
         titleSpan.textContent = session.title;
         titleSpan.className = 'session-title';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = session.time || 'Just now';
+        timeSpan.className = 'session-time';
+        
+        infoDiv.appendChild(titleSpan);
+        infoDiv.appendChild(timeSpan);
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-chat-btn';
@@ -74,7 +128,7 @@ function renderSidebar() {
             deleteSession(session.id);
         };
         
-        item.appendChild(titleSpan);
+        item.appendChild(infoDiv);
         item.appendChild(deleteBtn);
         item.onclick = () => loadSession(session.id);
         sidebarHistoryList.appendChild(item);
@@ -90,7 +144,8 @@ function deleteSession(id) {
         currentSessionId = null;
         const messages = chatContainer.querySelectorAll('.message-wrapper');
         messages.forEach(m => m.remove());
-        if (welcomeMessage) welcomeMessage.style.display = 'block';
+        if (welcomeMessage) welcomeMessage.style.display = 'flex';
+        updateActiveChatHeader(null);
     }
     renderSidebar();
 }
@@ -105,23 +160,57 @@ function loadSession(id) {
     messages.forEach(m => m.remove());
     if (welcomeMessage) welcomeMessage.style.display = 'none';
     
-    session.messages.forEach(msg => addMessageToChat(msg.text, msg.sender, false));
+    session.messages.forEach(msg => addMessageToChat(msg.text, msg.sender, false, msg.timestamp));
+    updateActiveChatHeader(session.title);
     renderSidebar();
-    if(window.innerWidth <= 768) sidebar.classList.add('collapsed');
+    if(window.innerWidth <= 768) sidebar.classList.remove('open');
 }
 
 newChatBtn.addEventListener('click', () => {
     currentSessionId = null;
     const messages = chatContainer.querySelectorAll('.message-wrapper');
     messages.forEach(m => m.remove());
-    if (welcomeMessage) welcomeMessage.style.display = 'block';
+    if (welcomeMessage) welcomeMessage.style.display = 'flex';
+    updateActiveChatHeader(null);
     renderSidebar();
-    if(window.innerWidth <= 768) sidebar.classList.add('collapsed');
+    if(window.innerWidth <= 768) sidebar.classList.remove('open');
 });
 
+clearCurrentChatBtn.addEventListener('click', () => {
+    if(currentSessionId) deleteSession(currentSessionId);
+});
+
+const editChatBtn = document.querySelector('.edit-chat-btn');
+editChatBtn.addEventListener('click', () => {
+    if (!currentSessionId) return;
+    const session = chatSessions.find(s => s.id === currentSessionId);
+    if (session) {
+        const newTitle = prompt("Enter new chat title:", session.title);
+        if (newTitle && newTitle.trim().length > 0) {
+            session.title = newTitle.trim();
+            localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+            updateActiveChatHeader(session.title);
+            renderSidebar();
+        }
+    }
+});
+
+clearAllBtn.addEventListener('click', () => {
+    if(confirm("Are you sure you want to clear all chat history?")) {
+        chatSessions = [];
+        localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+        newChatBtn.click();
+    }
+});
+
+function getCurrentTimeString() {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
-    // We do NOT auto-load the last chat. We start on a fresh screen like ChatGPT.
     renderSidebar();
+    updateActiveChatHeader(null);
 });
 
 // Drag and drop UI (Logic to be implemented in backend later)
@@ -168,13 +257,20 @@ attachBtn.addEventListener('click', () => {
 async function sendMessage() {
     const text = messageInput.value.trim();
     if (!text) return;
-    addMessageToChat(text, 'user');
+    
+    const timestamp = getCurrentTimeString();
+    addMessageToChat(text, 'user', true, timestamp);
+    
     messageInput.value = '';
     messageInput.style.height = 'auto';
+    charCount.textContent = `0 / ${MAX_CHARS}`;
     sendBtn.setAttribute('disabled', 'true');
+    
     const welcome = document.querySelector('.welcome-message');
     if (welcome) welcome.style.display = 'none';
+    
     const indicatorId = showTypingIndicator();
+    
     try {
         const formData = new FormData();
         formData.append('message', text);
@@ -189,24 +285,24 @@ async function sendMessage() {
         });
         const data = await response.json();
         removeTypingIndicator(indicatorId);
-        addMessageToChat(data.reply, 'ai');
+        addMessageToChat(data.reply, 'ai', true, getCurrentTimeString());
     } catch (error) {
         removeTypingIndicator(indicatorId);
-        addMessageToChat("Sorry, I encountered an error communicating with the server.", 'ai');
+        addMessageToChat("Sorry, I encountered an error communicating with the server.", 'ai', true, getCurrentTimeString());
     }
 }
 
-function addMessageToChat(text, sender, save = true) {
+function addMessageToChat(text, sender, save = true, timestamp = '') {
     if (save) {
         if (!currentSessionId) {
-            // Create a new session
             currentSessionId = Date.now();
             const title = text.length > 30 ? text.substring(0, 30) + '...' : text;
-            chatSessions.push({ id: currentSessionId, title: title, messages: [] });
+            chatSessions.push({ id: currentSessionId, title: title, time: 'Today, ' + timestamp, messages: [] });
+            updateActiveChatHeader(title);
         }
         const session = chatSessions.find(s => s.id === currentSessionId);
         if (session) {
-            session.messages.push({ text, sender });
+            session.messages.push({ text, sender, timestamp });
             localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
             renderSidebar();
         }
@@ -214,8 +310,26 @@ function addMessageToChat(text, sender, save = true) {
     
     const wrapper = document.createElement('div');
     wrapper.className = 'message-wrapper';
+    
+    const contentRow = document.createElement('div');
+    contentRow.className = 'message-content-row';
+    
+    // Avatar
+    const avatar = document.createElement('div');
+    avatar.className = `message-avatar ${sender}`;
+    if (sender === 'ai') {
+        avatar.innerHTML = '<i data-lucide="bot"></i>';
+    } else {
+        avatar.textContent = 'U';
+    }
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.style.flex = "1";
+    
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}`;
+    
     if (sender === 'ai') {
         marked.setOptions({
             highlight: function(code, lang) {
@@ -234,16 +348,95 @@ function addMessageToChat(text, sender, save = true) {
                     setTimeout(() => { btn.innerHTML = '<i data-lucide="copy"></i> Copy'; lucide.createIcons(); }, 2000);
                 });
             };
-            block.style.position = 'relative';
             block.appendChild(btn);
         });
-        lucide.createIcons();
     } else {
         messageDiv.textContent = text;
     }
-    wrapper.appendChild(messageDiv);
+    
+    messageContent.appendChild(messageDiv);
+    
+    // Add footers
+    if (sender === 'user') {
+        const footer = document.createElement('div');
+        footer.className = 'user-msg-footer';
+        footer.innerHTML = `${timestamp} <i data-lucide="check-check"></i>`;
+        messageContent.appendChild(footer);
+    } else if (sender === 'ai') {
+        const footer = document.createElement('div');
+        footer.className = 'ai-msg-footer';
+        
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = timestamp;
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'action-btn';
+        copyBtn.innerHTML = '<i data-lucide="copy"></i>';
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(text).then(() => {
+                copyBtn.innerHTML = '<i data-lucide="check"></i>';
+                lucide.createIcons();
+                setTimeout(() => { copyBtn.innerHTML = '<i data-lucide="copy"></i>'; lucide.createIcons(); }, 2000);
+            });
+        };
+        
+        const thumbsUpBtn = document.createElement('button');
+        thumbsUpBtn.className = 'action-btn';
+        thumbsUpBtn.innerHTML = '<i data-lucide="thumbs-up"></i>';
+        
+        const thumbsDownBtn = document.createElement('button');
+        thumbsDownBtn.className = 'action-btn';
+        thumbsDownBtn.innerHTML = '<i data-lucide="thumbs-down"></i>';
+        
+        thumbsUpBtn.onclick = () => {
+            thumbsUpBtn.classList.add('active-feedback');
+            thumbsDownBtn.classList.remove('active-feedback');
+        };
+        thumbsDownBtn.onclick = () => {
+            thumbsDownBtn.classList.add('active-feedback');
+            thumbsUpBtn.classList.remove('active-feedback');
+        };
+        
+        const regenBtn = document.createElement('button');
+        regenBtn.className = 'action-btn';
+        regenBtn.innerHTML = '<i data-lucide="rotate-cw"></i>';
+        regenBtn.onclick = () => {
+            if (!currentSessionId) return;
+            const session = chatSessions.find(s => s.id === currentSessionId);
+            if (session && session.messages.length > 0) {
+                let lastUserMsg = '';
+                for(let i = session.messages.length - 1; i >= 0; i--){
+                    if(session.messages[i].sender === 'user'){
+                        lastUserMsg = session.messages[i].text;
+                        break;
+                    }
+                }
+                if (lastUserMsg) {
+                    messageInput.value = lastUserMsg;
+                    messageInput.style.height = 'auto';
+                    charCount.textContent = `${lastUserMsg.length} / ${MAX_CHARS}`;
+                    sendBtn.removeAttribute('disabled');
+                    messageInput.focus();
+                }
+            }
+        };
+
+        footer.appendChild(timeSpan);
+        footer.appendChild(copyBtn);
+        footer.appendChild(thumbsUpBtn);
+        footer.appendChild(thumbsDownBtn);
+        footer.appendChild(regenBtn);
+        
+        messageContent.appendChild(footer);
+    }
+    
+    contentRow.appendChild(avatar);
+    contentRow.appendChild(messageContent);
+    wrapper.appendChild(contentRow);
+    
     chatContainer.appendChild(wrapper);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+    lucide.createIcons();
 }
 
 function showTypingIndicator() {
@@ -251,14 +444,28 @@ function showTypingIndicator() {
     const wrapper = document.createElement('div');
     wrapper.className = 'message-wrapper';
     wrapper.id = id;
+    
+    const contentRow = document.createElement('div');
+    contentRow.className = 'message-content-row';
+    
+    const avatar = document.createElement('div');
+    avatar.className = `message-avatar ai`;
+    avatar.innerHTML = '<i data-lucide="bot"></i>';
+    
     const indicator = document.createElement('div');
-    indicator.className = 'typing-indicator ai';
+    indicator.className = 'typing-indicator';
     indicator.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div><span class="thinking-text">Thinking...</span>';
-    wrapper.appendChild(indicator);
+    
+    contentRow.appendChild(avatar);
+    contentRow.appendChild(indicator);
+    wrapper.appendChild(contentRow);
+    
     chatContainer.appendChild(wrapper);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+    lucide.createIcons();
     return id;
 }
+
 function removeTypingIndicator(id) {
     const element = document.getElementById(id);
     if (element) element.remove();
